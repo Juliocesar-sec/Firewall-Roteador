@@ -1,0 +1,87 @@
+# Configuração do ProtonVPN no Debian 12
+
+Este guia irá ajudá-lo a instalar e configurar o **ProtonVPN** no seu sistema **Debian 12** com a interface de linha de comando (CLI).
+
+## Passo 1: Atualizar o Sistema
+
+Antes de começar, sempre é bom garantir que seu sistema esteja atualizado. Execute o seguinte comando:
+
+```bash
+sudo apt update && sudo apt upgrade -y
+
+Passo 2: Instalar Dependências
+
+Certifique-se de que você tem o python3-pip e o curl instalados para gerenciar pacotes e baixar o ProtonVPN:
+
+sudo apt install python3-pip curl -y
+
+Passo 3: Adicionar o Repositório ProtonVPN
+
+Adicione o repositório oficial do ProtonVPN à sua lista de repositórios:
+
+sudo apt install -y protonvpn-stable-release
+
+Alternativa para Instalação Manual
+
+Caso o repositório oficial não funcione, baixe e instale manualmente:
+
+wget -q -O - https://protonvpn.com/download/protonvpn-stable-release_1.0.8_all.deb | sudo dpkg -i -
+sudo apt update
+
+Passo 4: Instalar o Cliente ProtonVPN CLI
+
+Com o repositório configurado, instale o cliente ProtonVPN CLI:
+
+sudo apt install protonvpn-cli
+
+Passo 5: Fazer Login no ProtonVPN
+
+Agora, execute o comando de login com seu nome de usuário do ProtonVPN:
+
+protonvpn-cli login <seu_nome_de_usuario>
+
+Você será solicitado a inserir sua senha do ProtonVPN. Caso tenha autenticação de dois fatores (2FA), será necessário fornecer o código gerado.
+Passo 6: Verificar o Status
+
+Após fazer login, você pode verificar o status da sua conta:
+
+protonvpn-cli status
+
+Exemplo de saída:
+
+Status: Logged in
+
+Passo 7: Conectar ao ProtonVPN
+
+Para conectar-se ao ProtonVPN, execute o seguinte comando. Aqui estamos conectando ao servidor dos Estados Unidos (US). Você pode substituir "US" pelo código do país de sua preferência.
+
+protonvpn-cli c --cc US
+
+Se a conexão for bem-sucedida, você verá informações sobre o servidor e o status da conexão.
+Passo 8: Verificar a Conexão
+
+Verifique se a conexão foi bem-sucedida com:
+
+protonvpn-cli status
+
+Passo 9: Desconectar do ProtonVPN
+
+Quando terminar de usar o ProtonVPN, desconecte-se com:
+
+protonvpn-cli d
+
+Dicas
+
+    Você pode se conectar ao ProtonVPN automaticamente com o comando protonvpn-cli r para se reconectar ao servidor anterior.
+
+    Para verificar os logs, execute protonvpn-cli --get-logs.
+
+Possíveis Problemas
+
+    Se encontrar problemas ao tentar se conectar ou ao fazer login, certifique-se de que está usando as credenciais corretas e que o repositório está atualizado.
+
+Recursos
+
+    Documentação Oficial do ProtonVPN CLI
+
+    Suporte do ProtonVPN
