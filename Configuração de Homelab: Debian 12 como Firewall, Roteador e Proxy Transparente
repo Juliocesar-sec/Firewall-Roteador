@@ -1,0 +1,221 @@
+Configuração de Homelab: Debian 12 como Firewall, Roteador e Proxy Transparente
+
+Este repositório documenta a configuração de um servidor Debian 12 XFCE para funcionar como um nó central em um homelab, atuando simultaneamente como firewall, roteador e proxy web transparente. Esta solução permite um controle robusto sobre o tráfego de rede, otimização da navegação via cache e a base para futuras implementações de segurança e filtragem de conteúdo.
+🎯 Objetivo do Projeto
+
+O principal objetivo é transformar uma máquina com Debian 12 XFCE em um gateway de rede completo para um homelab, providenciando:
+
+    Roteamento de Tráfego: Conectar a rede local (LAN) à internet (WAN).
+
+    Segurança de Rede: Atuar como um firewall para proteger a rede interna.
+
+    Otimização de Acesso Web: Implementar um proxy de cache (Squid) para acelerar a navegação e economizar largura de banda.
+
+    Transparência: Configurar o proxy de forma transparente, eliminando a necessidade de ajustes manuais nos dispositivos clientes.
+
+🚀 Componentes Utilizados
+
+    Sistema Operacional: Debian 12 "Bookworm" (com ambiente de desktop XFCE)
+
+    Firewall & Roteamento:
+
+        UFW (Uncomplicated Firewall): Interface de linha de comando para gerenciar as regras de iptables.
+
+        Iptables: Ferramenta nativa do kernel Linux para filtragem de pacotes e NAT (Network Address Translation).
+
+    Proxy Web:
+
+        Squid: Servidor proxy de alto desempenho para web, configurado para cache e modo transparente.
+
+🗺️ Topologia de Rede (Conceitual)
+
+A máquina Debian atua como um ponto de acesso único entre a internet e a rede local.
+
+       Internet (WAN)
+             |
+             | (eth1)
+     [Servidor Debian 12]
+     (Firewall/Roteador/Proxy)
+             | (eth0)
+             |
+       Rede Local (LAN)
+             |
+      [Dispositivos Clientes]
+      (PCs, Laptops, Smartphones, etc.)
+
+    eth0: Interface de rede conectada à sua rede local (LAN), com um IP estático (ex: 192.168.1.1).
+
+    eth1: Interface de rede conectada ao seu modem/ISP (WAN), obtendo IP via DHCP ou estático.
+
+⚙️ Guia de Configuração Passo a Passo
+
+Siga estes passos para configurar seu Debian 12:
+1. Preparação Inicial do Debian
+
+Certifique-se de que o sistema está atualizado e que as interfaces de rede estão configuradas corretamente (uma para LAN e outra para WAN).
+
+sudo apt update
+sudo apt upgrade -y
+
+2. Ativar Encaminhamento de IP (IP Forwarding)
+
+Para que o Debian roteie o tráfego entre a LAN e a WAN, o encaminhamento de IP deve estar ativo.
+
+    Edite o arquivo de configuração do kernel:
+
+    sudo nano /etc/sysctl.conf
+
+    Descomente (remova o #) a seguinte linha, ou adicione-a se não existir:
+
+    net.ipv4.ip_forward=1
+
+    Salve (Ctrl+O) e saia (Ctrl+X).
+
+    Aplique a mudança imediatamente:
+
+    sudo sysctl -p
+
+3. Instalação e Configuração do Squid (Proxy Transparente)
+
+O Squid será instalado e configurado para interceptar o tráfego HTTP de forma transparente.
+
+    Instalar o Squid:
+
+    sudo apt install squid -y
+
+    Fazer backup do arquivo de configuração original:
+
+    sudo cp /etc/squid/squid.conf /etc/squid/squid.conf.original
+
+    Editar o arquivo de configuração do Squid:
+
+    sudo nano /etc/squid/squid.conf
+
+    Realize as seguintes modificações:
+
+        Porta de Escuta para Proxy Transparente:
+
+        Altere ou adicione esta linha para a porta que o Squid irá escutar, com a opção transparent.
+
+        http_port 3128 transparent
+
+        Definir ACL da Rede Local:
+
+        Substitua 192.168.1.0/24 pela sua faixa de IP da LAN.
+
+        acl localnet src 192.168.1.0/24
+
+        Permitir Acesso à Rede Local:
+
+        A ordem é crucial. Certifique-se de que http_access allow localnet venha antes de http_access deny all.
+
+        http_access allow localnet
+        http_access deny all
+
+        Configurar o Cache (Opcional, mas recomendado):
+
+        Descomente ou adicione esta linha para ativar o cache. 100 é o tamanho em MB.
+
+        cache_dir ufs /var/spool/squid 100 16 256
+
+        Definir um Hostname Visível (Opcional):
+
+        visible_hostname meu_homelab_firewall
+
+    Salvar (Ctrl+O) e Sair (Ctrl+X).
+
+    Reiniciar o serviço Squid:
+
+    sudo systemctl restart squid
+
+4. Configuração do UFW (Uncomplicated Firewall)
+
+O UFW facilitará a gestão das regras de iptables e será o principal ponto de controle do firewall.
+
+    Instalar o UFW:
+
+    sudo apt install ufw -y
+
+    Permitir acesso SSH (essencial para evitar bloqueios):
+
+    sudo ufw allow ssh
+
+    Ativar o UFW:
+
+    sudo ufw enable
+
+    Você pode ser avisado sobre SSH e conexões existentes. Confirme (y).
+
+5. Adicionar Regras Iptables para NAT e Proxy Transparente via UFW
+
+As regras mais complexas (NAT e redirecionamento transparente para o Squid) são adicionadas diretamente nos arquivos de regras do UFW para persistência.
+
+    Editar o arquivo before.rules do UFW:
+
+    Este arquivo é processado antes das regras padrão do UFW e é o local ideal para as regras de PREROUTING e POSTROUTING.
+
+    sudo nano /etc/ufw/before.rules
+
+    Adicionar Regra de NAT (Masquerading):
+
+    No final da seção *nat (antes do COMMIT final dessa seção), adicione a regra de MASQUERADE. Substitua eth1 pela sua interface WAN.
+
+    # NAT (Masquerading) para acesso à Internet
+    -A POSTROUTING -o eth1 -j MASQUERADE
+
+    Adicionar Regra de Redirecionamento para o Squid (Proxy Transparente):
+
+    No final da seção *nat (antes do COMMIT final dessa seção), adicione a regra de PREROUTING. Substitua eth0 pela sua interface LAN e 3128 pela porta do Squid.
+
+    # Redirecionamento de HTTP para Squid (Proxy Transparente)
+    -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 3128
+
+    (Nota: Para HTTPS transparente (SSL Bump), regras adicionais para a porta 443 seriam necessárias, juntamente com a configuração do Squid para SSL Bump, que é um tópico mais avançado e possui implicações de segurança.)
+
+    Verificar e Salvar:
+
+    Certifique-se de que cada bloco *tabela (ex: *nat, *filter) termina com um COMMIT. Se você adicionar regras e não houver um COMMIT no final da tabela correspondente, o UFW pode falhar ao carregar as regras.
+
+    Salve (Ctrl+O) e Saia (Ctrl+X).
+
+    Recarregar o UFW para aplicar as novas regras:
+
+    sudo ufw disable
+    sudo ufw enable
+
+✅ Verificação da Configuração
+
+Após todos os passos, é crucial verificar se tudo está funcionando como esperado:
+
+    Verificar o status do Squid:
+
+    sudo systemctl status squid
+
+    Deve indicar active (running).
+
+    Monitorar os logs do Squid:
+
+    Acompanhe o tráfego que passa pelo proxy.
+
+    sudo tail -f /var/log/squid/access.log
+
+    Testar a navegação nos dispositivos clientes:
+
+    Os dispositivos conectados à sua LAN devem conseguir acessar a internet normalmente, sem qualquer configuração manual de proxy no navegador. O tráfego HTTP deve aparecer no access.log do Squid.
+
+📈 Melhorias Futuras (Roadmap)
+
+Este setup básico pode ser expandido com as seguintes funcionalidades:
+
+    Filtragem de Conteúdo: Implementar bloqueio de sites indesejados ou categorias de conteúdo usando as ACLs do Squid e/ou integração com listas de bloqueio externas.
+
+    Autenticação de Usuários: Configurar autenticação no Squid para controlar e registrar o acesso de usuários específicos.
+
+    Monitoramento Avançado: Integrar ferramentas como sarg ou lightsquid para gerar relatórios detalhados de uso do proxy.
+
+    Serviços Adicionais: Adicionar outros serviços ao homelab, como um servidor DNS (Bind9 ou Pi-hole), DHCP, ou VPN.
+
+    Configuração de HTTPS Transparente (SSL Bump): Para interceptar e cachear tráfego HTTPS, compreendendo as implicações de segurança e privacidade.
+
+Sinta-se à vontade para clonar este repositório, testar a configuração e contribuir com melhorias!
+
