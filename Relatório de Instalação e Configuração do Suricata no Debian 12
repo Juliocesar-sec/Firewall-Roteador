@@ -1,0 +1,111 @@
+# Relatório de Instalação e Configuração do Suricata no Debian 12
+
+Este relatório detalha a instalação e configuração inicial do **Suricata**, um poderoso Sistema de Detecção de Intrusões (IDS) e Sistema de Prevenção de Intrusões (IPS) de código aberto, em um ambiente **Debian 12** (Bookworm).
+
+## 1. Objetivo
+
+O objetivo deste projeto foi instalar e configurar o **Suricata** para monitorar o tráfego de rede na `HOME_NET` definida como `192.168.171.0/24`, visando a detecção de potenciais ameaças e atividades maliciosas.
+
+## 2. Ambiente
+
+- **Sistema Operacional:** Debian 12 (Bookworm)
+- **Versão do Suricata:** 7.0.10 RELEASE
+- **Rede Monitorada (`HOME_NET`):** `192.168.1.1/24`
+
+## 3. Passos de Instalação
+
+### 3.1. Atualizar o Sistema
+
+Antes de iniciar a instalação, é importante garantir que seu sistema esteja atualizado:
+
+```bash
+sudo apt update && sudo apt upgrade -y
+
+3.2. Instalar o Suricata
+
+O Suricata pode ser instalado diretamente dos repositórios oficiais do Debian:
+
+sudo apt install suricata -y
+
+3.3. Verificar a Instalação
+
+Para verificar se o Suricata foi instalado corretamente, execute o seguinte comando:
+
+suricata --version
+
+Deve retornar algo como:
+
+Suricata version 7.0.10 (amd64)
+
+4. Configuração Inicial
+4.1. Definir a Rede Monitorada (HOME_NET)
+
+Abra o arquivo de configuração do Suricata para definir a rede monitorada:
+
+sudo nano /etc/suricata/suricata.yaml
+
+Encontre a linha que define HOME_NET e altere para o endereço da sua rede local:
+
+# HOME_NET is used to define the local network for Suricata
+HOME_NET: "[192.168.1.1/24]"
+
+4.2. Configurar Interfaces de Rede
+
+Se o Suricata for usar interfaces específicas para captura de tráfego, edite as interfaces no arquivo de configuração:
+
+# Example of interface configuration for Suricata
+- interface: eth0  # Substitua para a interface correta, como eth0, enp0s3, etc.
+
+4.3. Habilitar o Modo IPS (Prevenção de Intrusões)
+
+Por padrão, o Suricata funciona como um Sistema de Detecção de Intrusões (IDS). Para habilitar a funcionalidade de Sistema de Prevenção de Intrusões (IPS), altere a configuração:
+
+# Configure o modo IPS
+IPS: yes
+
+5. Testar a Configuração
+
+Execute o seguinte comando para testar a configuração do Suricata:
+
+sudo suricata -T
+
+Isso verificará se o arquivo de configuração está correto e retornará informações sobre possíveis erros.
+6. Iniciar e Habilitar o Suricata
+
+Para iniciar o Suricata e garantir que ele seja executado automaticamente no boot do sistema:
+
+sudo systemctl start suricata
+sudo systemctl enable suricata
+
+7. Monitoramento e Logs
+
+O Suricata gera logs detalhados sobre o tráfego de rede, que são armazenados nos seguintes arquivos:
+
+    Logs de IDS/IPS: /var/log/suricata/suricata.log
+
+    Logs de Alertas: /var/log/suricata/eve.json
+
+Use o tail para ver os logs em tempo real:
+
+sudo tail -f /var/log/suricata/eve.json
+
+8. Atualização de Regras
+
+Para manter as regras de detecção sempre atualizadas, instale o suricata-update:
+
+sudo apt install suricata-update
+
+E então execute o comando para atualizar as regras:
+
+sudo suricata-update
+
+9. Conclusão
+
+A instalação e configuração do Suricata no Debian 12 foram concluídas com sucesso. O Suricata agora está configurado para monitorar o tráfego da rede 192.168.1.1/24, com a funcionalidade de detecção e prevenção de intrusões habilitada. Além disso, os logs de tráfego e alertas estão configurados corretamente.
+10. Referências
+
+    Documentação oficial do Suricata
+
+    Site oficial do Suricata
+
+    Suricata-Update
