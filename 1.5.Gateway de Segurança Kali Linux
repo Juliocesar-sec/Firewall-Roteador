@@ -1,0 +1,95 @@
+# Gateway de Segurança Kali Linux
+
+Este projeto configura o Kali Linux para atuar como um gateway de segurança entre um modem 4G e um roteador GL.iNet, fornecendo funcionalidades de firewall, DHCP e IDS/IPS.
+
+---
+
+## Visão Geral
+
+O gateway usa:
+
+- **Kali Linux** para roteamento entre:
+  - Interface 4G (`eth1`) — recebe IP via DHCP
+  - Interface LAN para GL.iNet (`eth0`) — IP estático 192.168.10.1
+- Servidor DHCP (`isc-dhcp-server`) para rede interna
+- Firewall UFW com regras NAT e roteamento
+- IDS/IPS Suricata para monitoramento de tráfego
+
+---
+
+## Como Usar
+
+### 1. Após executar o script de configuração:
+
+- Reinicie o roteador GL.iNet para obter IP via DHCP.
+- No Kali, verifique as interfaces:
+
+  ```bash
+  ip a show eth0
+  ip a show eth1
+
+    Confirme que eth0 está em 192.168.10.1 e eth1 com IP DHCP.
+
+2. Verifique o DHCP Server:
+
+sudo systemctl status isc-dhcp-server
+cat /var/lib/dhcp/dhcpd.leases
+
+3. Gerencie o Firewall (UFW):
+
+    Verifique status:
+
+sudo ufw status verbose
+
+Para editar regras NAT (se necessário):
+
+    sudo nano /etc/ufw/before.rules
+
+    Certifique-se que o bloco NAT para mascaramento está presente antes da linha *filter.
+
+4. Monitorar Suricata IDS/IPS:
+
+    Verifique status:
+
+sudo systemctl status suricata
+
+Veja logs em tempo real:
+
+sudo tail -f /var/log/suricata/eve.json
+
+Ajuste configuração:
+
+    sudo nano /etc/suricata/suricata.yaml
+
+    Defina HOME_NET para 192.168.10.0/24 e configure interfaces eth0 e eth1.
+
+5. Atualizar Regras Suricata:
+
+sudo suricata-update
+sudo systemctl restart suricata
+
+Troubleshooting Comum
+Problema	Solução recomendada
+eth0 sem IP esperado	Verifique /etc/network/interfaces e reinicie com sudo ifdown eth0 && sudo ifup eth0
+DHCP não funciona	Verifique status e logs do isc-dhcp-server
+Sem acesso à internet	Confirme regras UFW e configuração NAT no /etc/ufw/before.rules
+Suricata não inicia	Confira configuração e logs do Suricata
+Firewall bloqueando conexões	Reveja regras UFW, políticas padrão e rotas
+Backup e Manutenção
+
+Faça backups antes de editar arquivos críticos:
+
+sudo cp /etc/network/interfaces /etc/network/interfaces.bak
+sudo cp /etc/ufw/before.rules /etc/ufw/before.rules.bak
+sudo cp /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.bak
+sudo cp /etc/suricata/suricata.yaml /etc/suricata/suricata.yaml.bak
+
+Para restaurar, copie o arquivo de backup de volta.
+Considerações Finais
+
+    Mantenha o sistema atualizado.
+
+    Teste alterações em ambiente controlado.
+
+    Monitore logs regularmente para segurança e desempenho.
+
