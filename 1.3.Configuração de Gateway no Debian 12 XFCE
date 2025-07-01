@@ -1,0 +1,94 @@
+Configuração de Gateway no Debian 12 XFCE
+
+Este projeto automatiza a configuração de um sistema Debian 12 XFCE para atuar como um Gateway de Segurança, funcionando como um firewall com NAT, servidor DHCP e IDS/IPS (Suricata), conectando um modem 4G e um roteador GL.iNet.
+Objetivo
+
+Configurar o Debian 12 XFCE para:
+
+    Ativar encaminhamento de pacotes (IP forwarding).
+
+    Configurar a interface eth0 com IP estático para conexão com o roteador GL.iNet.
+
+    Configurar a interface eth1 para conectar ao modem 4G (via DHCP).
+
+    Instalar e configurar servidor DHCP (ISC DHCP Server) para a rede interna.
+
+    Configurar firewall UFW com regras básicas e NAT automático.
+
+    Instalar e configurar Suricata para monitoramento de rede (IDS/IPS).
+
+Requisitos
+
+    Debian 12 com ambiente XFCE.
+
+    Interfaces de rede físicas configuradas:
+
+        eth1: conexão com modem 4G (recebe IP via DHCP).
+
+        eth0: conexão com roteador GL.iNet (recebe IP estático 192.168.10.1).
+
+    Acesso root ou sudo.
+
+Como usar
+
+    Salvar o script
+
+Salve o arquivo do script com o nome configurar_gateway.sh.
+
+    Tornar o script executável
+
+chmod +x configurar_gateway.sh
+
+    Executar o script
+
+sudo ./configurar_gateway.sh
+
+O script fará as seguintes ações automaticamente:
+
+    Ativa IP forwarding persistente.
+
+    Configura IP estático para a interface eth0.
+
+    Instala e configura ISC DHCP Server na interface eth0.
+
+    Configura UFW com regras básicas e adiciona regras NAT.
+
+    Instala e configura Suricata IDS/IPS.
+
+Notas importantes
+
+    Após execução, é recomendada a reinicialização do roteador GL.iNet para garantir que ele receba o IP correto da interface eth0.
+
+    Edite manualmente o arquivo /etc/suricata/suricata.yaml para ajustar a variável HOME_NET e configurar corretamente as interfaces monitoradas.
+
+    Para monitorar o Suricata:
+
+sudo tail -f /var/log/suricata/eve.json
+
+    Para verificar o status do firewall:
+
+sudo ufw status verbose
+
+Estrutura da rede
+
+[Internet] <--modem 4G (eth1) Debian Gateway (eth0)--> Roteador GL.iNet --> Dispositivos na rede local
+
+Troubleshooting
+
+    Caso o IP estático na eth0 não seja aplicado, reinicie o sistema.
+
+    Verifique logs do DHCP Server:
+
+sudo journalctl -u isc-dhcp-server
+
+    Verifique logs do Suricata:
+
+sudo journalctl -u suricata
+
+    Para resetar o firewall:
+
+sudo ufw reset
+
+Licença
+
+Este script é fornecido "como está" e pode ser modificado conforme necessidade.
